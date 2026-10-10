@@ -35,12 +35,12 @@
     </button>
   </header>
 
-  <!-- РЕЖИМ КЛИЕНТА -->
+  <!-- ================= РЕЖИМ КЛИЕНТА ================= -->
   <main id="clientView" class="space-y-6">
     <section>
       <div class="flex justify-between items-center mb-2.5 px-0.5">
-        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">1. Выберите объем</span>
-        <span id="selectedServicePrice" class="text-xs font-mono text-rose-400 font-semibold">2200 ₽</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">1. Выберите услугу</span>
+        <span id="selectedServicePrice" class="text-xs font-mono text-rose-400 font-semibold"></span>
       </div>
       <div id="servicesContainer" class="space-y-2"></div>
     </section>
@@ -53,6 +53,7 @@
     <section>
       <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-2.5 px-0.5">3. Свободные окна</span>
       <div id="timesContainer" class="grid grid-cols-4 gap-2"></div>
+      <p id="noTimesLabel" class="text-xs text-neutral-500 text-center hidden py-3">Нет свободных окон на этот день</p>
     </section>
 
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
@@ -76,306 +77,72 @@
     </div>
   </main>
 
-  <!-- РЕЖИМ АДМИНКИ -->
+  <!-- ================= РЕЖИМ АДМИНКИ ================= -->
   <main id="adminView" class="hidden space-y-6">
     <div class="bg-rose-950/20 border border-rose-500/20 rounded-2xl p-3.5 flex items-center justify-between text-xs text-rose-300">
-      <span>Управление расписанием и окнами</span>
+      <span>Управление расписанием и услугами</span>
       <span class="font-mono bg-rose-900/40 px-2 py-0.5 rounded-md text-[10px]">ADMIN</span>
     </div>
 
+    <!-- Управление датами и временем -->
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
       <div class="flex justify-between items-center mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Слоты времени</span>
-        <span id="adminSelectedDateLabel" class="text-xs font-mono text-rose-400"></span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Окна на дату</span>
+        <span id="adminSelectedDateLabel" class="text-xs font-mono text-rose-400 font-semibold"></span>
       </div>
-      <p class="text-[11px] text-neutral-400 mb-3">Нажмите на время, чтобы сделать его занятым или свободным:</p>
       <div id="adminDatesContainer" class="flex gap-2 overflow-x-auto hide-scrollbar pb-2 mb-3"></div>
-      <div id="adminTimesGrid" class="grid grid-cols-4 gap-2"></div>
+      
+      <!-- Добавление нового времени -->
+      <div class="flex gap-2 mb-3">
+        <input id="newTimeInput" type="time" class="bg-neutral-800 border border-neutral-700 text-white rounded-xl px-3 py-2 text-xs flex-1 focus:outline-none focus:border-rose-400" />
+        <button onclick="addCustomTimeSlot()" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-medium active:scale-95 transition">
+          + Добавить время
+        </button>
+      </div>
+
+      <div id="adminTimesGrid" class="grid grid-cols-3 gap-2"></div>
     </section>
 
+    <!-- Управление услугами -->
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
-      <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-3">Цены</span>
+      <div class="flex justify-between items-center mb-3">
+        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Услуги и прайс</span>
+        <button onclick="openAddServiceModal()" class="text-xs bg-neutral-800 hover:bg-neutral-700 text-rose-400 border border-neutral-700 px-2.5 py-1 rounded-lg">
+          + Добавить
+        </button>
+      </div>
       <div id="adminServicesList" class="space-y-2.5"></div>
     </section>
   </main>
 
+  <!-- Модалка добавления услуги -->
+  <div id="addServiceModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 w-full max-w-xs shadow-2xl space-y-3">
+      <h3 class="text-sm font-semibold text-white">Новая услуга</h3>
+      <div>
+        <label class="block text-[10px] text-neutral-400 mb-1">Название услуги</label>
+        <input id="newServTitle" type="text" placeholder="Напр. Мокрый эффект" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400" />
+      </div>
+      <div>
+        <label class="block text-[10px] text-neutral-400 mb-1">Длительность</label>
+        <input id="newServTime" type="text" placeholder="Напр. 2 ч" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400" />
+      </div>
+      <div>
+        <label class="block text-[10px] text-neutral-400 mb-1">Цена (₽)</label>
+        <input id="newServPrice" type="number" placeholder="2500" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400" />
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeAddServiceModal()" class="flex-1 py-2 text-xs rounded-xl bg-neutral-800 text-neutral-300">Отмена</button>
+        <button onclick="saveNewService()" class="flex-1 py-2 text-xs rounded-xl bg-rose-500 text-white font-medium">Создать</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
+    if (tg) { tg.ready(); tg.expand(); }
 
     const MASTER_TELEGRAM_ID = 374188835;
     const BOT_TOKEN = "8869519052:AAFZlx_s0omsS5YtkFaf14M3r_llXC90j5U";
 
-    const defaultServices = [
-      { id: '1', title: 'Классика (1D)', time: '1.5 ч', price: 2200 },
-      { id: '2', title: '2D объем', time: '2 ч', price: 2600 },
-      { id: '3', title: '3D объем / Мокрый эффект', time: '2.5 ч', price: 3000 },
-      { id: '4', title: 'Ламинирование + ботокс', time: '1 ч', price: 1900 }
-    ];
-    const defaultTimeSlots = ["10:00", "12:30", "15:00", "17:30", "20:00"];
-
-    let services = defaultServices;
-    let blockedSlots = {};
-
-    let isAdmin = false;
-    let selectedService = services[0];
-    let selectedDate = getFormattedDate(new Date());
-    let selectedTime = null;
-
-    function getFormattedDate(d) {
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    }
-
-    // Сохранение и загрузка постоянного состояния
-    function saveBlockedSlots() {
-      const dataStr = JSON.stringify(blockedSlots);
-      try {
-        localStorage.setItem('lash_blocked_slots_persistent', dataStr);
-      } catch (e) {}
-
-      if (tg?.CloudStorage) {
-        tg.CloudStorage.setItem('lash_blocked_slots', dataStr, (err, ok) => {
-          if (err) console.error("CloudStorage save error:", err);
-        });
-      }
-    }
-
-    function loadBlockedSlots(callback) {
-      try {
-        const local = localStorage.getItem('lash_blocked_slots_persistent');
-        if (local) blockedSlots = JSON.parse(local);
-      } catch (e) {}
-
-      if (tg?.CloudStorage) {
-        tg.CloudStorage.getItem('lash_blocked_slots', (err, val) => {
-          if (!err && val) {
-            try {
-              blockedSlots = JSON.parse(val);
-            } catch (e) {}
-          }
-          if (callback) callback();
-        });
-      } else {
-        if (callback) callback();
-      }
-    }
-
-    function checkAdmin() {
-      const currentId = tg?.initDataUnsafe?.user?.id;
-      const btn = document.getElementById('modeSwitchBtn');
-      if (currentId === MASTER_TELEGRAM_ID || !currentId) {
-        btn.classList.remove('hidden');
-      } else {
-        btn.classList.add('hidden');
-      }
-    }
-
-    function toggleAdminMode() {
-      isAdmin = !isAdmin;
-      document.getElementById('clientView').classList.toggle('hidden', isAdmin);
-      document.getElementById('adminView').classList.toggle('hidden', !isAdmin);
-      document.getElementById('modeSwitchText').textContent = isAdmin ? 'Клиент' : 'Мастер';
-      document.getElementById('roleSubtitle').textContent = isAdmin ? 'Управление мастером' : 'Онлайн-запись к мастеру';
-      if (isAdmin) renderAdmin(); else renderClient();
-    }
-
-    function renderServices() {
-      const el = document.getElementById('servicesContainer');
-      el.innerHTML = '';
-      services.forEach(item => {
-        const active = selectedService.id === item.id;
-        const div = document.createElement('div');
-        div.className = `p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${
-          active ? 'bg-rose-950/40 border-rose-500 text-white' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
-        }`;
-        div.onclick = () => {
-          selectedService = item;
-          document.getElementById('selectedServicePrice').textContent = `${item.price} ₽`;
-          renderServices();
-        };
-        div.innerHTML = `
-          <div>
-            <div class="text-sm font-medium">${item.title}</div>
-            <div class="text-xs text-neutral-400">${item.time}</div>
-          </div>
-          <div class="font-mono text-sm font-semibold text-rose-300">${item.price} ₽</div>
-        `;
-        el.appendChild(div);
-      });
-    }
-
-    function renderDates() {
-      const el = document.getElementById('datesContainer');
-      el.innerHTML = '';
-      const now = new Date();
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(now);
-        d.setDate(now.getDate() + i);
-        const key = getFormattedDate(d);
-        const active = selectedDate === key;
-
-        const card = document.createElement('div');
-        card.className = `min-w-[60px] py-2.5 rounded-xl border flex flex-col items-center justify-center cursor-pointer ${
-          active ? 'bg-rose-500 border-rose-400 text-white' : 'bg-neutral-900 border-neutral-800 text-neutral-400'
-        }`;
-        card.onclick = () => {
-          selectedDate = key;
-          selectedTime = null;
-          renderDates();
-          renderTimes();
-        };
-        card.innerHTML = `
-          <span class="text-[10px] uppercase">${d.toLocaleDateString('ru-RU', { weekday: 'short' })}</span>
-          <span class="text-base font-bold">${d.getDate()}</span>
-        `;
-        el.appendChild(card);
-      }
-    }
-
-    function renderTimes() {
-      const el = document.getElementById('timesContainer');
-      el.innerHTML = '';
-      const busy = blockedSlots[selectedDate] || [];
-
-      defaultTimeSlots.forEach(t => {
-        const isBusy = busy.includes(t);
-        const active = selectedTime === t;
-        const btn = document.createElement('button');
-        btn.disabled = isBusy;
-        btn.className = `py-2.5 rounded-xl border text-xs font-mono font-medium transition ${
-          isBusy ? 'bg-neutral-900 text-neutral-600 border-neutral-800/60 line-through cursor-not-allowed opacity-40' :
-          active ? 'bg-rose-500 border-rose-400 text-white shadow-[0_0_10px_rgba(244,63,94,0.3)]' : 'bg-neutral-900 border-neutral-800 text-neutral-200'
-        }`;
-        btn.textContent = t;
-        btn.onclick = () => {
-          selectedTime = t;
-          renderTimes();
-        };
-        el.appendChild(btn);
-      });
-    }
-
-    function renderAdmin() {
-      document.getElementById('adminSelectedDateLabel').textContent = selectedDate;
-      const dEl = document.getElementById('adminDatesContainer');
-      dEl.innerHTML = '';
-      const now = new Date();
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(now);
-        d.setDate(now.getDate() + i);
-        const key = getFormattedDate(d);
-        const active = selectedDate === key;
-        const card = document.createElement('div');
-        card.className = `min-w-[55px] py-2 rounded-xl border flex flex-col items-center text-xs cursor-pointer ${
-          active ? 'bg-rose-500 text-white border-rose-400' : 'bg-neutral-900 text-neutral-400 border-neutral-800'
-        }`;
-        card.onclick = () => {
-          selectedDate = key;
-          renderAdmin();
-        };
-        card.innerHTML = `<span>${d.toLocaleDateString('ru-RU', { weekday: 'short' })}</span><span class="font-bold">${d.getDate()}</span>`;
-        dEl.appendChild(card);
-      }
-
-      const tEl = document.getElementById('adminTimesGrid');
-      tEl.innerHTML = '';
-      const busy = blockedSlots[selectedDate] || [];
-      defaultTimeSlots.forEach(t => {
-        const isBusy = busy.includes(t);
-        const btn = document.createElement('button');
-        btn.className = `py-2 rounded-xl border text-xs font-mono transition ${
-          isBusy ? 'bg-red-950/60 border-red-800 text-red-300' : 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
-        }`;
-        btn.innerHTML = `${t}<br><span class="text-[9px]">${isBusy ? 'Занято' : 'Свободно'}</span>`;
-        btn.onclick = () => {
-          if (!blockedSlots[selectedDate]) blockedSlots[selectedDate] = [];
-          const idx = blockedSlots[selectedDate].indexOf(t);
-          if (idx > -1) blockedSlots[selectedDate].splice(idx, 1);
-          else blockedSlots[selectedDate].push(t);
-          saveBlockedSlots();
-          renderAdmin();
-        };
-        tEl.appendChild(btn);
-      });
-
-      const sEl = document.getElementById('adminServicesList');
-      sEl.innerHTML = '';
-      services.forEach(s => {
-        const row = document.createElement('div');
-        row.className = 'flex justify-between items-center p-2.5 bg-neutral-800 rounded-xl text-xs';
-        row.innerHTML = `<span>${s.title}</span><span class="font-mono text-rose-300">${s.price} ₽</span>`;
-        sEl.appendChild(row);
-      });
-    }
-
-    function renderClient() {
-      renderServices();
-      renderDates();
-      renderTimes();
-    }
-
-    function sendTelegramNotification(order) {
-      try {
-        const username = tg?.initDataUnsafe?.user?.username ? `@${tg.initDataUnsafe.user.username}` : 'не указан';
-        const msg = encodeURIComponent(
-          `🔔 <b>НОВАЯ ЗАПИСЬ НА РЕСНИЦЫ!</b>\n\n` +
-          `👤 <b>Клиент:</b> ${order.name}\n` +
-          `📱 <b>Телефон:</b> ${order.phone || 'не указан'}\n` +
-          `💬 <b>Telegram:</b> ${username}\n` +
-          `💅 <b>Услуга:</b> ${order.service}\n` +
-          `📅 <b>Дата:</b> ${order.date}\n` +
-          `⏰ <b>Время:</b> ${order.time}\n` +
-          `💰 <b>Сумма:</b> ${order.price} ₽`
-        );
-        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${MASTER_TELEGRAM_ID}&text=${msg}&parse_mode=HTML`);
-      } catch (err) {
-        console.error("Ошибка отправки сообщения:", err);
-      }
-    }
-
-    function submitBooking() {
-      const name = document.getElementById('clientName').value.trim() || tg?.initDataUnsafe?.user?.first_name || 'Гость';
-      const phone = document.getElementById('clientPhone').value.trim();
-
-      if (!selectedTime) {
-        alert('Пожалуйста, выберите время визита!');
-        return;
-      }
-
-      if (!blockedSlots[selectedDate]) blockedSlots[selectedDate] = [];
-      if (!blockedSlots[selectedDate].includes(selectedTime)) {
-        blockedSlots[selectedDate].push(selectedTime);
-      }
-      saveBlockedSlots();
-
-      const bookingInfo = {
-        name: name,
-        phone: phone,
-        service: selectedService.title,
-        price: selectedService.price,
-        date: selectedDate,
-        time: selectedTime
-      };
-
-      sendTelegramNotification(bookingInfo);
-
-      alert(`Запись оформлена!\n${selectedService.title}\nДата: ${selectedDate} в ${selectedTime}\nИмя: ${name}`);
-      selectedTime = null;
-      renderClient();
-    }
-
-    if (tg?.initDataUnsafe?.user?.first_name) {
-      document.getElementById('clientName').value = tg.initDataUnsafe.user.first_name;
-    }
-
-    checkAdmin();
-    // Сначала подтягиваем сохраненные слоты, затем отрисовываем
-    loadBlockedSlots(() => {
-      renderClient();
-    });
-  </script>
-</body>
-</html>
+    const baseServices =
