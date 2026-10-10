@@ -84,9 +84,25 @@
   <!-- ================= РЕЖИМ АДМИНКИ ================= -->
   <main id="adminView" class="hidden space-y-6">
     <div class="bg-rose-950/20 border border-rose-500/20 rounded-2xl p-3.5 flex items-center justify-between text-xs text-rose-300">
-      <span>Управление расписанием и услугами</span>
+      <span>Управление расписанием и клиентами</span>
       <span class="font-mono bg-rose-900/40 px-2 py-0.5 rounded-md text-[10px]">ADMIN</span>
     </div>
+
+    <!-- БЛОК НАПОМИНАНИЙ НА ЗАВТРА -->
+    <section class="bg-neutral-900/80 border border-amber-500/30 rounded-2xl p-4 shadow-lg">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-xs font-semibold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+          <span>🔔</span> Записи на завтра (<span id="tomorrowDateLabel" class="font-mono"></span>)
+        </span>
+      </div>
+      <p class="text-[11px] text-neutral-400 mb-3">Отправьте клиентам вежливое напоминание в Telegram в один клик:</p>
+      
+      <div id="tomorrowBookingsList" class="space-y-2 mb-3"></div>
+
+      <button id="sendAllRemindersBtn" onclick="sendAllTomorrowReminders()" class="w-full py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-300 text-xs font-medium transition active:scale-95">
+        📢 Отправить напоминания всем на завтра
+      </button>
+    </section>
 
     <!-- Управление окнами -->
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
@@ -168,6 +184,7 @@
     let services = defaultServices;
     let customSchedule = {};
     let blockedSlots = {};
+    let appointments = []; // [{ id, date, time, service, price, name, phone, tgId, username }]
 
     function getFormattedDate(d) {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -186,6 +203,7 @@
         if (Array.isArray(parsed.services) && parsed.services.length > 0) services = parsed.services;
         if (parsed.customSchedule) customSchedule = parsed.customSchedule;
         if (parsed.blockedSlots) blockedSlots = parsed.blockedSlots;
+        if (Array.isArray(parsed.appointments)) appointments = parsed.appointments;
       }
     } catch (e) {}
 
@@ -204,8 +222,9 @@
           if (Array.isArray(rec.services) && rec.services.length > 0) services = rec.services;
           if (rec.customSchedule) customSchedule = rec.customSchedule;
           if (rec.blockedSlots) blockedSlots = rec.blockedSlots;
+          if (Array.isArray(rec.appointments)) appointments = rec.appointments;
 
-          localStorage.setItem('lash_cache', JSON.stringify({ services, customSchedule, blockedSlots }));
+          localStorage.setItem('lash_cache', JSON.stringify({ services, customSchedule, blockedSlots, appointments }));
           if (isAdmin) renderAdmin(); else renderClient();
           if (statusEl) statusEl.textContent = '● онлайн';
         }
@@ -215,7 +234,7 @@
     }
 
     async function pushToCloud() {
-      const payload = { services, customSchedule, blockedSlots };
+      const payload = { services, customSchedule, blockedSlots, appointments };
       localStorage.setItem('lash_cache', JSON.stringify(payload));
       try {
         await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
@@ -351,7 +370,10 @@
       });
     }
 
+    // ================= АДМИНКА =================
     function renderAdmin() {
+      renderTomorrowReminders();
+
       document.getElementById('adminSelectedDateLabel').textContent = selectedDate;
       const dEl = document.getElementById('adminDatesContainer');
       dEl.innerHTML = '';
@@ -408,6 +430,94 @@
         `;
         sEl.appendChild(row);
       });
+    }
+
+    // Отображение записей на завтра
+    function getTomorrowKey() {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return getFormattedDate(tomorrow);
+    }
+
+    function renderTomorrowReminders() {
+      const tomorrowKey = getTomorrowKey();
+      document.getElementById('tomorrowDateLabel').textContent = tomorrowKey;
+      const listEl = document.getElementById('tomorrowBookingsList');
+      listEl.innerHTML = '';
+
+      const tomorrowApps = appointments.filter(a => a.date === tomorrowKey);
+      const btnAll = document.getElementById('sendAllRemindersBtn');
+
+      if (tomorrowApps.length === 0) {
+        listEl.innerHTML = `<div class="text-xs text-neutral-500 py-1 italic">На завтра пока нет записей</div>`;
+        btnAll.classList.add('hidden');
+        return;
+      }
+
+      btnAll.classList.remove('hidden');
+
+      tomorrowApps.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'p-2.5 bg-neutral-800/80 border border-neutral-700/60 rounded-xl flex items-center justify-between text-xs';
+        div.innerHTML = `
+          <div>
+            <div class="font-semibold text-white">${item.name} <span class="font-mono text-amber-300">в ${item.time}</span></div>
+            <div class="text-[11px] text-neutral-400">${item.service} • ${item.phone || 'нет тел'}</div>
+          </div>
+          <button onclick="sendSingleReminder('${item.id}')" class="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-[10px] active:scale-95 transition">
+            🔔 Напомнить
+          </button>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    function sendTelegramDirectMessage(chatId, text) {
+      if (!chatId) return Promise.resolve(false);
+      return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}&parse_mode=HTML`);
+    }
+
+    async function sendSingleReminder(appId) {
+      const item = appointments.find(a => a.id === appId);
+      if (!item) return;
+
+      if (!item.tgId) {
+        alert(`У клиента ${item.name} не определен Telegram ID (запись без бота). Позвоните по телефону: ${item.phone}`);
+        return;
+      }
+
+      const msg = `✨ <b>Напоминание о записи!</b>\n\nЗдравствуйте, ${item.name}!\nНапоминаем, что вы записаны завтра на <b>${item.service}</b> в <b>${item.time}</b> в Lash Art Studio ✨\n\nЖдем вас! Если ваши планы изменятся, пожалуйста, сообщите нам как можно скорее.`;
+      
+      try {
+        const res = await sendTelegramDirectMessage(item.tgId, msg);
+        if (res.ok) {
+          alert(`Напоминание успешно отправлено клиенту ${item.name}!`);
+        } else {
+          alert(`Не удалось отправить. Возможно, клиент заблокировал бота.`);
+        }
+      } catch (e) {
+        alert('Ошибка отправки сообщения');
+      }
+    }
+
+    async function sendAllTomorrowReminders() {
+      const tomorrowKey = getTomorrowKey();
+      const tomorrowApps = appointments.filter(a => a.date === tomorrowKey);
+      if (tomorrowApps.length === 0) return;
+
+      if (!confirm(`Отправить напоминания клиентам (${tomorrowApps.length} чел.) на завтра?`)) return;
+
+      let sentCount = 0;
+      for (const item of tomorrowApps) {
+        if (item.tgId) {
+          const msg = `✨ <b>Напоминание о записи!</b>\n\nЗдравствуйте, ${item.name}!\nНапоминаем, что вы записаны завтра на <b>${item.service}</b> в <b>${item.time}</b> в Lash Art Studio ✨\n\nЖдем вас! Если ваши планы изменятся, пожалуйста, сообщите нам как можно скорее.`;
+          try {
+            await sendTelegramDirectMessage(item.tgId, msg);
+            sentCount++;
+          } catch (e) {}
+        }
+      }
+      alert(`Готово! Напоминания отправлены (${sentCount} из ${tomorrowApps.length}).`);
     }
 
     function toggleAdminSlot(t) {
@@ -492,8 +602,8 @@
     }
 
     function sendTelegramNotifications(order) {
-      const clientUserId = tg?.initDataUnsafe?.user?.id;
-      const username = tg?.initDataUnsafe?.user?.username ? `@${tg.initDataUnsafe.user.username}` : 'не указан';
+      const clientUserId = order.tgId;
+      const username = order.username ? `@${order.username}` : 'не указан';
 
       // Мастеру
       const masterMsg = encodeURIComponent(
@@ -516,7 +626,7 @@
           `📅 <b>Дата:</b> ${order.date}\n` +
           `⏰ <b>Время:</b> ${order.time}\n` +
           `💰 <b>Стоимость:</b> ${order.price} ₽\n\n` +
-          `Ждем вас! Если планы изменятся, пожалуйста, предупредите мастера заранее.`
+          `Ждем вас! За день до процедуры мы пришлем вам напоминание ✨`
         );
         fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${clientUserId}&text=${clientMsg}&parse_mode=HTML`);
       }
@@ -535,18 +645,26 @@
       if (!blockedSlots[selectedDate].includes(selectedTime)) {
         blockedSlots[selectedDate].push(selectedTime);
       }
-      pushToCloud();
 
-      const bookingInfo = {
+      const clientTgId = tg?.initDataUnsafe?.user?.id || null;
+      const clientUsername = tg?.initDataUnsafe?.user?.username || null;
+
+      const newAppointment = {
+        id: Date.now().toString(),
         name: name,
         phone: phone,
         service: selectedService.title,
         price: selectedService.price,
         date: selectedDate,
-        time: selectedTime
+        time: selectedTime,
+        tgId: clientTgId,
+        username: clientUsername
       };
 
-      sendTelegramNotifications(bookingInfo);
+      appointments.push(newAppointment);
+      pushToCloud();
+
+      sendTelegramNotifications(newAppointment);
 
       alert(`Запись подтверждена!\n${selectedService.title}\nДата: ${selectedDate} в ${selectedTime}\nИмя: ${name}`);
       selectedTime = null;
