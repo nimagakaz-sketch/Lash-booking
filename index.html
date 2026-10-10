@@ -30,7 +30,6 @@
         <p id="roleSubtitle" class="text-xs text-neutral-400">Онлайн-запись к мастеру</p>
       </div>
     </div>
-    <!-- Кнопка админки: отображается ТОЛЬКО для вашего аккаунта (ID 374188835) -->
     <button onclick="toggleAdminMode()" id="modeSwitchBtn" class="hidden text-xs px-3 py-1.5 rounded-xl border border-neutral-700 bg-neutral-900/80 text-neutral-300 hover:text-white transition flex items-center gap-1 active:scale-95">
       <span>⚙️</span> <span id="modeSwitchText">Мастер</span>
     </button>
@@ -107,7 +106,6 @@
       tg.expand();
     }
 
-    // ДАННЫЕ АДМИНИСТРАТОРА И БОТА:
     const MASTER_TELEGRAM_ID = 374188835;
     const BOT_TOKEN = "8869519052:AAFZlx_s0omsS5YtkFaf14M3r_llXC90j5U";
 
@@ -129,6 +127,40 @@
 
     function getFormattedDate(d) {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // Сохранение и загрузка постоянного состояния
+    function saveBlockedSlots() {
+      const dataStr = JSON.stringify(blockedSlots);
+      try {
+        localStorage.setItem('lash_blocked_slots_persistent', dataStr);
+      } catch (e) {}
+
+      if (tg?.CloudStorage) {
+        tg.CloudStorage.setItem('lash_blocked_slots', dataStr, (err, ok) => {
+          if (err) console.error("CloudStorage save error:", err);
+        });
+      }
+    }
+
+    function loadBlockedSlots(callback) {
+      try {
+        const local = localStorage.getItem('lash_blocked_slots_persistent');
+        if (local) blockedSlots = JSON.parse(local);
+      } catch (e) {}
+
+      if (tg?.CloudStorage) {
+        tg.CloudStorage.getItem('lash_blocked_slots', (err, val) => {
+          if (!err && val) {
+            try {
+              blockedSlots = JSON.parse(val);
+            } catch (e) {}
+          }
+          if (callback) callback();
+        });
+      } else {
+        if (callback) callback();
+      }
     }
 
     function checkAdmin() {
@@ -213,9 +245,9 @@
         const active = selectedTime === t;
         const btn = document.createElement('button');
         btn.disabled = isBusy;
-        btn.className = `py-2.5 rounded-xl border text-xs font-mono font-medium ${
-          isBusy ? 'bg-neutral-900 text-neutral-600 border-neutral-800 line-through' :
-          active ? 'bg-rose-500 border-rose-400 text-white' : 'bg-neutral-900 border-neutral-800 text-neutral-200'
+        btn.className = `py-2.5 rounded-xl border text-xs font-mono font-medium transition ${
+          isBusy ? 'bg-neutral-900 text-neutral-600 border-neutral-800/60 line-through cursor-not-allowed opacity-40' :
+          active ? 'bg-rose-500 border-rose-400 text-white shadow-[0_0_10px_rgba(244,63,94,0.3)]' : 'bg-neutral-900 border-neutral-800 text-neutral-200'
         }`;
         btn.textContent = t;
         btn.onclick = () => {
@@ -254,7 +286,7 @@
       defaultTimeSlots.forEach(t => {
         const isBusy = busy.includes(t);
         const btn = document.createElement('button');
-        btn.className = `py-2 rounded-xl border text-xs font-mono ${
+        btn.className = `py-2 rounded-xl border text-xs font-mono transition ${
           isBusy ? 'bg-red-950/60 border-red-800 text-red-300' : 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
         }`;
         btn.innerHTML = `${t}<br><span class="text-[9px]">${isBusy ? 'Занято' : 'Свободно'}</span>`;
@@ -263,6 +295,7 @@
           const idx = blockedSlots[selectedDate].indexOf(t);
           if (idx > -1) blockedSlots[selectedDate].splice(idx, 1);
           else blockedSlots[selectedDate].push(t);
+          saveBlockedSlots();
           renderAdmin();
         };
         tEl.appendChild(btn);
@@ -313,7 +346,10 @@
       }
 
       if (!blockedSlots[selectedDate]) blockedSlots[selectedDate] = [];
-      blockedSlots[selectedDate].push(selectedTime);
+      if (!blockedSlots[selectedDate].includes(selectedTime)) {
+        blockedSlots[selectedDate].push(selectedTime);
+      }
+      saveBlockedSlots();
 
       const bookingInfo = {
         name: name,
@@ -327,6 +363,7 @@
       sendTelegramNotification(bookingInfo);
 
       alert(`Запись оформлена!\n${selectedService.title}\nДата: ${selectedDate} в ${selectedTime}\nИмя: ${name}`);
+      selectedTime = null;
       renderClient();
     }
 
@@ -335,7 +372,10 @@
     }
 
     checkAdmin();
-    renderClient();
+    // Сначала подтягиваем сохраненные слоты, затем отрисовываем
+    loadBlockedSlots(() => {
+      renderClient();
+    });
   </script>
 </body>
 </html>
