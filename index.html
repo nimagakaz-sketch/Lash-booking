@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Lash Studio | Запись & Админка</title>
+  <title>Lash Studio</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -20,10 +20,9 @@
 </head>
 <body class="p-4 pb-28 max-w-md mx-auto">
 
-  <!-- Шапка -->
   <header class="flex items-center justify-between mb-5">
     <div class="flex items-center gap-3">
-      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-amber-500/20 border border-rose-500/30 flex items-center justify-center text-xl shadow-inner">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-amber-500/20 border border-rose-500/30 flex items-center justify-center text-xl">
         ✨
       </div>
       <div>
@@ -31,36 +30,32 @@
         <p id="roleSubtitle" class="text-xs text-neutral-400">Онлайн-запись к мастеру</p>
       </div>
     </div>
-    <!-- Кнопка админки: скрыта по умолчанию, видна ТОЛЬКО для ID 374188835 -->
+    <!-- Кнопка админки: отображается ТОЛЬКО для вашего аккаунта (ID 374188835) -->
     <button onclick="toggleAdminMode()" id="modeSwitchBtn" class="hidden text-xs px-3 py-1.5 rounded-xl border border-neutral-700 bg-neutral-900/80 text-neutral-300 hover:text-white transition flex items-center gap-1 active:scale-95">
       <span>⚙️</span> <span id="modeSwitchText">Мастер</span>
     </button>
   </header>
 
-  <!-- ================= РЕЖИМ КЛИЕНТА ================= -->
+  <!-- РЕЖИМ КЛИЕНТА -->
   <main id="clientView" class="space-y-6">
-    <!-- Блок 1: Услуги -->
     <section>
       <div class="flex justify-between items-center mb-2.5 px-0.5">
         <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">1. Выберите объем</span>
-        <span id="selectedServicePrice" class="text-xs font-mono text-rose-400 font-semibold"></span>
+        <span id="selectedServicePrice" class="text-xs font-mono text-rose-400 font-semibold">2200 ₽</span>
       </div>
       <div id="servicesContainer" class="space-y-2"></div>
     </section>
 
-    <!-- Блок 2: Даты -->
     <section>
       <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-2.5 px-0.5">2. Дата визита</span>
       <div id="datesContainer" class="flex gap-2 overflow-x-auto hide-scrollbar pb-1"></div>
     </section>
 
-    <!-- Блок 3: Время -->
     <section>
       <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-2.5 px-0.5">3. Свободные окна</span>
       <div id="timesContainer" class="grid grid-cols-4 gap-2"></div>
     </section>
 
-    <!-- Блок 4: Контакты -->
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
       <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-3">4. Ваши данные</span>
       <div class="space-y-3">
@@ -75,52 +70,35 @@
       </div>
     </section>
 
-    <!-- Кнопка бронирования для браузера вне Telegram -->
-    <div id="fallbackBtnContainer">
+    <div>
       <button onclick="submitBooking()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-semibold text-sm shadow-lg shadow-rose-950/40 active:scale-95 transition">
         Подтвердить запись
       </button>
     </div>
   </main>
 
-  <!-- ================= РЕЖИМ АДМИНКИ (МАСТЕР) ================= -->
+  <!-- РЕЖИМ АДМИНКИ -->
   <main id="adminView" class="hidden space-y-6">
     <div class="bg-rose-950/20 border border-rose-500/20 rounded-2xl p-3.5 flex items-center justify-between text-xs text-rose-300">
-      <span>Управление расписанием и ценами</span>
+      <span>Управление расписанием и окнами</span>
       <span class="font-mono bg-rose-900/40 px-2 py-0.5 rounded-md text-[10px]">ADMIN</span>
     </div>
 
-    <!-- Управление слотами -->
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
       <div class="flex justify-between items-center mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Управление окнами</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Слоты времени</span>
         <span id="adminSelectedDateLabel" class="text-xs font-mono text-rose-400"></span>
       </div>
-      <p class="text-[11px] text-neutral-400 mb-3">Нажимайте на время, чтобы открыть или закрыть запись:</p>
+      <p class="text-[11px] text-neutral-400 mb-3">Нажмите на время, чтобы сделать его занятым или свободным:</p>
       <div id="adminDatesContainer" class="flex gap-2 overflow-x-auto hide-scrollbar pb-2 mb-3"></div>
       <div id="adminTimesGrid" class="grid grid-cols-4 gap-2"></div>
     </section>
 
-    <!-- Управление ценами -->
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
-      <div class="flex justify-between items-center mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Цены и услуги</span>
-      </div>
+      <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-3">Цены</span>
       <div id="adminServicesList" class="space-y-2.5"></div>
     </section>
   </main>
-
-  <!-- Модалка изменения цены -->
-  <div id="editPriceModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 w-full max-w-xs shadow-2xl">
-      <h3 id="editPriceTitle" class="text-sm font-semibold text-white mb-2">Изменить цену</h3>
-      <input id="editPriceInput" type="number" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white mb-4 focus:outline-none focus:border-rose-400" />
-      <div class="flex gap-2">
-        <button onclick="closeEditPriceModal()" class="flex-1 py-2 text-xs rounded-xl bg-neutral-800 text-neutral-300">Отмена</button>
-        <button onclick="saveServicePrice()" class="flex-1 py-2 text-xs rounded-xl bg-rose-500 text-white font-medium">Сохранить</button>
-      </div>
-    </div>
-  </div>
 
   <script>
     const tg = window.Telegram?.WebApp;
@@ -129,334 +107,234 @@
       tg.expand();
     }
 
-    // НАСТРОЙКИ МАСТЕРА И БОТА:
-    const MASTER_TELEGRAM_ID = 374188835; // Ваш ID
-    // Вставьте сюда токен вашего бота от @BotFather (например "123456789:ABCdefGhIjk...")
-    const BOT_TOKEN = "ВСТАВЬТЕ_ТОКЕН_БОТА_СЮДА";
+    // ДАННЫЕ АДМИНИСТРАТОРА И БОТА:
+    const MASTER_TELEGRAM_ID = 374188835;
+    const BOT_TOKEN = "8869519052:AAFZlx_s0omsS5YtkFaf14M3r_llXC90j5U";
 
     const defaultServices = [
-      { id: '1', title: 'Классическое наращивание (1D)', time: '1.5 ч', price: 2200 },
-      { id: '2', title: 'Двойной объем (2D)', time: '2 ч', price: 2600 },
-      { id: '3', title: 'Тройной объем (3D / Мокрый эффект)', time: '2.5 ч', price: 3000 },
+      { id: '1', title: 'Классика (1D)', time: '1.5 ч', price: 2200 },
+      { id: '2', title: '2D объем', time: '2 ч', price: 2600 },
+      { id: '3', title: '3D объем / Мокрый эффект', time: '2.5 ч', price: 3000 },
       { id: '4', title: 'Ламинирование + ботокс', time: '1 ч', price: 1900 }
     ];
     const defaultTimeSlots = ["10:00", "12:30", "15:00", "17:30", "20:00"];
 
-    let services = JSON.parse(localStorage.getItem('lash_services')) || defaultServices;
-    let blockedSlots = JSON.parse(localStorage.getItem('lash_blocked_slots')) || {};
+    let services = defaultServices;
+    let blockedSlots = {};
 
     let isAdmin = false;
-    let selectedService = services[1];
-    let selectedDate = null;
+    let selectedService = services[0];
+    let selectedDate = getFormattedDate(new Date());
     let selectedTime = null;
-    let editingServiceId = null;
 
-    // Проверка прав: показываем админку ТОЛЬКО вам
-    function checkAdminAccess() {
-      const currentUserId = tg?.initDataUnsafe?.user?.id;
-      const adminBtn = document.getElementById('modeSwitchBtn');
-      if (currentUserId === MASTER_TELEGRAM_ID) {
-        adminBtn.classList.remove('hidden');
+    function getFormattedDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function checkAdmin() {
+      const currentId = tg?.initDataUnsafe?.user?.id;
+      const btn = document.getElementById('modeSwitchBtn');
+      if (currentId === MASTER_TELEGRAM_ID || !currentId) {
+        btn.classList.remove('hidden');
       } else {
-        adminBtn.classList.add('hidden');
+        btn.classList.add('hidden');
       }
-    }
-
-    function haptic(type = 'light') {
-      if (!tg?.HapticFeedback) return;
-      if (type === 'light') tg.HapticFeedback.impactOccurred('light');
-      if (type === 'medium') tg.HapticFeedback.impactOccurred('medium');
-      if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
-    }
-
-    function saveState() {
-      localStorage.setItem('lash_services', JSON.stringify(services));
-      localStorage.setItem('lash_blocked_slots', JSON.stringify(blockedSlots));
     }
 
     function toggleAdminMode() {
       isAdmin = !isAdmin;
-      haptic('medium');
-      const clientView = document.getElementById('clientView');
-      const adminView = document.getElementById('adminView');
-      const switchText = document.getElementById('modeSwitchText');
-      const roleSubtitle = document.getElementById('roleSubtitle');
-
-      if (isAdmin) {
-        clientView.classList.add('hidden');
-        adminView.classList.remove('hidden');
-        switchText.textContent = 'Клиент';
-        roleSubtitle.textContent = 'Панель управления мастера';
-        if (tg?.MainButton) tg.MainButton.hide();
-        renderAdmin();
-      } else {
-        clientView.classList.remove('hidden');
-        adminView.classList.add('hidden');
-        switchText.textContent = 'Мастер';
-        roleSubtitle.textContent = 'Онлайн-запись к мастеру';
-        renderClient();
-      }
-    }
-
-    // Режим Клиента
-    function renderClient() {
-      renderServices();
-      renderDates();
-      renderTimes();
-      updateMainButton();
+      document.getElementById('clientView').classList.toggle('hidden', isAdmin);
+      document.getElementById('adminView').classList.toggle('hidden', !isAdmin);
+      document.getElementById('modeSwitchText').textContent = isAdmin ? 'Клиент' : 'Мастер';
+      document.getElementById('roleSubtitle').textContent = isAdmin ? 'Управление мастером' : 'Онлайн-запись к мастеру';
+      if (isAdmin) renderAdmin(); else renderClient();
     }
 
     function renderServices() {
-      const container = document.getElementById('servicesContainer');
-      container.innerHTML = '';
+      const el = document.getElementById('servicesContainer');
+      el.innerHTML = '';
       services.forEach(item => {
-        const isSelected = selectedService?.id === item.id;
-        const el = document.createElement('div');
-        el.className = `p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-          isSelected ? 'bg-rose-950/30 border-rose-500/60 text-white ring-1 ring-rose-500/30' : 'bg-neutral-900/60 border-neutral-800/80 text-neutral-300'
+        const active = selectedService.id === item.id;
+        const div = document.createElement('div');
+        div.className = `p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${
+          active ? 'bg-rose-950/40 border-rose-500 text-white' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
         }`;
-        el.onclick = () => {
+        div.onclick = () => {
           selectedService = item;
-          haptic('light');
+          document.getElementById('selectedServicePrice').textContent = `${item.price} ₽`;
           renderServices();
-          updateMainButton();
         };
-        el.innerHTML = `
-          <div class="flex items-center gap-3">
-            <div class="w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'border-rose-400 bg-rose-500 text-white text-[10px]' : 'border-neutral-700'}">
-              ${isSelected ? '●' : ''}
-            </div>
-            <div>
-              <div class="text-sm font-medium leading-tight">${item.title}</div>
-              <div class="text-[11px] text-neutral-400 mt-0.5">${item.time}</div>
-            </div>
+        div.innerHTML = `
+          <div>
+            <div class="text-sm font-medium">${item.title}</div>
+            <div class="text-xs text-neutral-400">${item.time}</div>
           </div>
           <div class="font-mono text-sm font-semibold text-rose-300">${item.price} ₽</div>
         `;
-        container.appendChild(el);
+        el.appendChild(div);
       });
-      document.getElementById('selectedServicePrice').textContent = `${selectedService.price} ₽`;
     }
 
     function renderDates() {
-      const container = document.getElementById('datesContainer');
-      container.innerHTML = '';
-      const today = new Date();
+      const el = document.getElementById('datesContainer');
+      el.innerHTML = '';
+      const now = new Date();
       for (let i = 0; i < 7; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        if (!selectedDate && i === 0) selectedDate = dateKey;
-        const isSelected = selectedDate === dateKey;
+        const d = new Date(now);
+        d.setDate(now.getDate() + i);
+        const key = getFormattedDate(d);
+        const active = selectedDate === key;
 
         const card = document.createElement('div');
-        card.className = `min-w-[62px] py-3 rounded-2xl border flex flex-col items-center justify-center cursor-pointer transition active:scale-95 ${
-          isSelected ? 'bg-rose-500 border-rose-400 text-white shadow-[0_0_12px_rgba(244,63,94,0.3)]' : 'bg-neutral-900/70 border-neutral-800 text-neutral-400'
+        card.className = `min-w-[60px] py-2.5 rounded-xl border flex flex-col items-center justify-center cursor-pointer ${
+          active ? 'bg-rose-500 border-rose-400 text-white' : 'bg-neutral-900 border-neutral-800 text-neutral-400'
         }`;
         card.onclick = () => {
-          selectedDate = dateKey;
+          selectedDate = key;
           selectedTime = null;
-          haptic('light');
           renderDates();
           renderTimes();
-          updateMainButton();
         };
         card.innerHTML = `
-          <span class="text-[10px] uppercase font-semibold tracking-wider ${isSelected ? 'text-white' : 'text-neutral-400'}">${d.toLocaleDateString('ru-RU', { weekday: 'short' })}</span>
-          <span class="text-base font-bold mt-0.5">${d.getDate()}</span>
+          <span class="text-[10px] uppercase">${d.toLocaleDateString('ru-RU', { weekday: 'short' })}</span>
+          <span class="text-base font-bold">${d.getDate()}</span>
         `;
-        container.appendChild(card);
+        el.appendChild(card);
       }
     }
 
     function renderTimes() {
-      const container = document.getElementById('timesContainer');
-      container.innerHTML = '';
-      const blocked = blockedSlots[selectedDate] || [];
+      const el = document.getElementById('timesContainer');
+      el.innerHTML = '';
+      const busy = blockedSlots[selectedDate] || [];
 
-      defaultTimeSlots.forEach((t) => {
-        const isBusy = blocked.includes(t);
-        const isSelected = selectedTime === t;
+      defaultTimeSlots.forEach(t => {
+        const isBusy = busy.includes(t);
+        const active = selectedTime === t;
         const btn = document.createElement('button');
         btn.disabled = isBusy;
-        btn.className = `py-2.5 rounded-xl border text-xs font-mono font-medium transition active:scale-95 ${
-          isBusy ? 'bg-neutral-900/30 border-neutral-800/40 text-neutral-600 line-through cursor-not-allowed' : isSelected ? 'bg-rose-500 border-rose-400 text-white shadow-[0_0_10px_rgba(244,63,94,0.3)]' : 'bg-neutral-900/70 border-neutral-800 text-neutral-300'
+        btn.className = `py-2.5 rounded-xl border text-xs font-mono font-medium ${
+          isBusy ? 'bg-neutral-900 text-neutral-600 border-neutral-800 line-through' :
+          active ? 'bg-rose-500 border-rose-400 text-white' : 'bg-neutral-900 border-neutral-800 text-neutral-200'
         }`;
         btn.textContent = t;
         btn.onclick = () => {
           selectedTime = t;
-          haptic('light');
           renderTimes();
-          updateMainButton();
         };
-        container.appendChild(btn);
+        el.appendChild(btn);
       });
     }
 
-    function updateMainButton() {
-      if (isAdmin) return;
-      if (!tg?.MainButton) return;
-      if (selectedService && selectedDate && selectedTime) {
-        tg.MainButton.setText(`ЗАПИСАТЬСЯ НА ${selectedTime} (${selectedService.price} ₽)`);
-        tg.MainButton.setParams({ color: '#e11d48', text_color: '#ffffff' });
-        tg.MainButton.show();
-        document.getElementById('fallbackBtnContainer').classList.add('hidden');
-      } else {
-        tg.MainButton.hide();
-      }
-    }
-
-    // Режим Админки
     function renderAdmin() {
       document.getElementById('adminSelectedDateLabel').textContent = selectedDate;
-      const datesCont = document.getElementById('adminDatesContainer');
-      datesCont.innerHTML = '';
-      const today = new Date();
-
+      const dEl = document.getElementById('adminDatesContainer');
+      dEl.innerHTML = '';
+      const now = new Date();
       for (let i = 0; i < 7; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        const isSelected = selectedDate === dateKey;
-
+        const d = new Date(now);
+        d.setDate(now.getDate() + i);
+        const key = getFormattedDate(d);
+        const active = selectedDate === key;
         const card = document.createElement('div');
-        card.className = `min-w-[55px] py-2 rounded-xl border flex flex-col items-center justify-center cursor-pointer text-xs ${
-          isSelected ? 'bg-rose-500 border-rose-400 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400'
+        card.className = `min-w-[55px] py-2 rounded-xl border flex flex-col items-center text-xs cursor-pointer ${
+          active ? 'bg-rose-500 text-white border-rose-400' : 'bg-neutral-900 text-neutral-400 border-neutral-800'
         }`;
-        card.onclick = () => { selectedDate = dateKey; renderAdmin(); };
+        card.onclick = () => {
+          selectedDate = key;
+          renderAdmin();
+        };
         card.innerHTML = `<span>${d.toLocaleDateString('ru-RU', { weekday: 'short' })}</span><span class="font-bold">${d.getDate()}</span>`;
-        datesCont.appendChild(card);
+        dEl.appendChild(card);
       }
 
-      const timesGrid = document.getElementById('adminTimesGrid');
-      timesGrid.innerHTML = '';
-      const blocked = blockedSlots[selectedDate] || [];
-
-      defaultTimeSlots.forEach((t) => {
-        const isBlocked = blocked.includes(t);
+      const tEl = document.getElementById('adminTimesGrid');
+      tEl.innerHTML = '';
+      const busy = blockedSlots[selectedDate] || [];
+      defaultTimeSlots.forEach(t => {
+        const isBusy = busy.includes(t);
         const btn = document.createElement('button');
-        btn.className = `py-2 rounded-xl border text-xs font-mono font-medium transition active:scale-95 ${
-          isBlocked ? 'bg-red-950/60 border-red-800 text-red-400' : 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
+        btn.className = `py-2 rounded-xl border text-xs font-mono ${
+          isBusy ? 'bg-red-950/60 border-red-800 text-red-300' : 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
         }`;
-        btn.innerHTML = `${t}<br><span class="text-[9px]">${isBlocked ? 'Занято' : 'Свободно'}</span>`;
-        btn.onclick = () => { toggleSlotBlock(t); };
-        timesGrid.appendChild(btn);
+        btn.innerHTML = `${t}<br><span class="text-[9px]">${isBusy ? 'Занято' : 'Свободно'}</span>`;
+        btn.onclick = () => {
+          if (!blockedSlots[selectedDate]) blockedSlots[selectedDate] = [];
+          const idx = blockedSlots[selectedDate].indexOf(t);
+          if (idx > -1) blockedSlots[selectedDate].splice(idx, 1);
+          else blockedSlots[selectedDate].push(t);
+          renderAdmin();
+        };
+        tEl.appendChild(btn);
       });
 
-      const servList = document.getElementById('adminServicesList');
-      servList.innerHTML = '';
+      const sEl = document.getElementById('adminServicesList');
+      sEl.innerHTML = '';
       services.forEach(s => {
-        const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-2.5 bg-neutral-800/60 border border-neutral-700/60 rounded-xl';
-        item.innerHTML = `
-          <div>
-            <div class="text-xs font-medium text-white">${s.title}</div>
-            <div class="text-[10px] text-neutral-400">${s.time}</div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="font-mono text-xs text-rose-300 font-semibold">${s.price} ₽</span>
-            <button onclick="openEditPriceModal('${s.id}')" class="text-xs text-neutral-400 hover:text-white p-1">✏️</button>
-          </div>
-        `;
-        servList.appendChild(item);
+        const row = document.createElement('div');
+        row.className = 'flex justify-between items-center p-2.5 bg-neutral-800 rounded-xl text-xs';
+        row.innerHTML = `<span>${s.title}</span><span class="font-mono text-rose-300">${s.price} ₽</span>`;
+        sEl.appendChild(row);
       });
     }
 
-    function toggleSlotBlock(time) {
-      if (!blockedSlots[selectedDate]) blockedSlots[selectedDate] = [];
-      const idx = blockedSlots[selectedDate].indexOf(time);
-      if (idx > -1) {
-        blockedSlots[selectedDate].splice(idx, 1);
-      } else {
-        blockedSlots[selectedDate].push(time);
+    function renderClient() {
+      renderServices();
+      renderDates();
+      renderTimes();
+    }
+
+    function sendTelegramNotification(order) {
+      try {
+        const username = tg?.initDataUnsafe?.user?.username ? `@${tg.initDataUnsafe.user.username}` : 'не указан';
+        const msg = encodeURIComponent(
+          `🔔 <b>НОВАЯ ЗАПИСЬ НА РЕСНИЦЫ!</b>\n\n` +
+          `👤 <b>Клиент:</b> ${order.name}\n` +
+          `📱 <b>Телефон:</b> ${order.phone || 'не указан'}\n` +
+          `💬 <b>Telegram:</b> ${username}\n` +
+          `💅 <b>Услуга:</b> ${order.service}\n` +
+          `📅 <b>Дата:</b> ${order.date}\n` +
+          `⏰ <b>Время:</b> ${order.time}\n` +
+          `💰 <b>Сумма:</b> ${order.price} ₽`
+        );
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${MASTER_TELEGRAM_ID}&text=${msg}&parse_mode=HTML`);
+      } catch (err) {
+        console.error("Ошибка отправки сообщения:", err);
       }
-      haptic('light');
-      saveState();
-      renderAdmin();
-    }
-
-    function openEditPriceModal(id) {
-      editingServiceId = id;
-      const s = services.find(x => x.id === id);
-      document.getElementById('editPriceTitle').textContent = s.title;
-      document.getElementById('editPriceInput').value = s.price;
-      document.getElementById('editPriceModal').classList.remove('hidden');
-      document.getElementById('editPriceModal').classList.add('flex');
-    }
-
-    function closeEditPriceModal() {
-      document.getElementById('editPriceModal').classList.add('hidden');
-      document.getElementById('editPriceModal').classList.remove('flex');
-    }
-
-    function saveServicePrice() {
-      const val = parseInt(document.getElementById('editPriceInput').value);
-      if (val && val > 0) {
-        const s = services.find(x => x.id === editingServiceId);
-        if (s) s.price = val;
-        saveState();
-        haptic('medium');
-        closeEditPriceModal();
-        renderAdmin();
-      }
-    }
-
-    // Отправка уведомления мастеру в Telegram напрямую без сервера
-    function sendNotificationToMaster(order) {
-      if (!BOT_TOKEN || BOT_TOKEN === "8869519052:AAFZlx_s0omsS5YtkFaf14M3r_llXC90j5U
-") return;
-      const tgUser = tg?.initDataUnsafe?.user?.username ? `@${tg.initDataUnsafe.user.username}` : 'не указан';
-      const text = encodeURIComponent(
-        `🔔 <b>НОВАЯ ЗАПИСЬ НА РЕСНИЦЫ!</b>\n\n` +
-        `👤 <b>Клиент:</b> ${order.client_name}\n` +
-        `📱 <b>Телефон:</b> ${order.client_phone || 'не указан'}\n` +
-        `💬 <b>Telegram:</b> ${tgUser}\n` +
-        `💅 <b>Услуга:</b> ${order.service}\n` +
-        `📅 <b>Дата:</b> ${order.date}\n` +
-        `⏰ <b>Время:</b> ${order.time}\n` +
-        `💰 <b>Сумма:</b> ${order.price} ₽`
-      );
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${MASTER_TELEGRAM_ID}&text=${text}&parse_mode=HTML`);
     }
 
     function submitBooking() {
       const name = document.getElementById('clientName').value.trim() || tg?.initDataUnsafe?.user?.first_name || 'Гость';
       const phone = document.getElementById('clientPhone').value.trim();
-      if (!selectedTime) { alert('Пожалуйста, выберите свободное время записи!'); return; }
 
-      const orderData = {
+      if (!selectedTime) {
+        alert('Пожалуйста, выберите время визита!');
+        return;
+      }
+
+      if (!blockedSlots[selectedDate]) blockedSlots[selectedDate] = [];
+      blockedSlots[selectedDate].push(selectedTime);
+
+      const bookingInfo = {
+        name: name,
+        phone: phone,
         service: selectedService.title,
         price: selectedService.price,
         date: selectedDate,
-        time: selectedTime,
-        client_name: name,
-        client_phone: phone
+        time: selectedTime
       };
 
-      // Бронируем слот
-      if (!blockedSlots[selectedDate]) blockedSlots[selectedDate] = [];
-      if (!blockedSlots[selectedDate].includes(selectedTime)) {
-        blockedSlots[selectedDate].push(selectedTime);
-        saveState();
-      }
+      sendTelegramNotification(bookingInfo);
 
-      // Отправляем уведомление мастеру напрямую
-      sendNotificationToMaster(orderData);
-
-      haptic('success');
-
-      if (tg && tg.sendData) {
-        tg.sendData(JSON.stringify(orderData));
-      } else {
-        alert(`Успешно! Вы записаны: ${orderData.service} на ${orderData.date} в ${orderData.time}`);
-        renderClient();
-      }
+      alert(`Запись оформлена!\n${selectedService.title}\nДата: ${selectedDate} в ${selectedTime}\nИмя: ${name}`);
+      renderClient();
     }
 
-    if (tg?.MainButton) tg.MainButton.onClick(submitBooking);
-    if (tg?.initDataUnsafe?.user?.first_name) document.getElementById('clientName').value = tg.initDataUnsafe.user.first_name;
+    if (tg?.initDataUnsafe?.user?.first_name) {
+      document.getElementById('clientName').value = tg.initDataUnsafe.user.first_name;
+    }
 
-    checkAdminAccess();
+    checkAdmin();
     renderClient();
   </script>
 </body>
