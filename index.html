@@ -35,114 +35,15 @@
     </button>
   </header>
 
-  <!-- ================= РЕЖИМ КЛИЕНТА ================= -->
+  <!-- КЛИЕНТ -->
   <main id="clientView" class="space-y-6">
     <section>
       <div class="flex justify-between items-center mb-2.5 px-0.5">
         <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">1. Выберите услугу</span>
-        <span id="selectedServicePrice" class="text-xs font-mono text-rose-400 font-semibold"></span>
+        <span id="selectedServicePrice" class="text-xs font-mono text-rose-400 font-semibold">2200 ₽</span>
       </div>
       <div id="servicesContainer" class="space-y-2"></div>
     </section>
 
     <section>
-      <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-2.5 px-0.5">2. Дата визита</span>
-      <div id="datesContainer" class="flex gap-2 overflow-x-auto hide-scrollbar pb-1"></div>
-    </section>
-
-    <section>
-      <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-2.5 px-0.5">3. Свободные окна</span>
-      <div id="timesContainer" class="grid grid-cols-4 gap-2"></div>
-      <p id="noTimesLabel" class="text-xs text-neutral-500 text-center hidden py-3">Нет свободных окон на этот день</p>
-    </section>
-
-    <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
-      <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-3">4. Ваши данные</span>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-[11px] text-neutral-400 mb-1">Имя</label>
-          <input id="clientName" type="text" placeholder="Ваше имя" class="w-full bg-neutral-800/80 border border-neutral-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-rose-400/80 transition" />
-        </div>
-        <div>
-          <label class="block text-[11px] text-neutral-400 mb-1">Телефон для связи</label>
-          <input id="clientPhone" type="tel" placeholder="+7 (999) 000-00-00" class="w-full bg-neutral-800/80 border border-neutral-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-rose-400/80 transition" />
-        </div>
-      </div>
-    </section>
-
-    <div>
-      <button onclick="submitBooking()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-semibold text-sm shadow-lg shadow-rose-950/40 active:scale-95 transition">
-        Подтвердить запись
-      </button>
-    </div>
-  </main>
-
-  <!-- ================= РЕЖИМ АДМИНКИ ================= -->
-  <main id="adminView" class="hidden space-y-6">
-    <div class="bg-rose-950/20 border border-rose-500/20 rounded-2xl p-3.5 flex items-center justify-between text-xs text-rose-300">
-      <span>Управление расписанием и услугами</span>
-      <span class="font-mono bg-rose-900/40 px-2 py-0.5 rounded-md text-[10px]">ADMIN</span>
-    </div>
-
-    <!-- Управление датами и временем -->
-    <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
-      <div class="flex justify-between items-center mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Окна на дату</span>
-        <span id="adminSelectedDateLabel" class="text-xs font-mono text-rose-400 font-semibold"></span>
-      </div>
-      <div id="adminDatesContainer" class="flex gap-2 overflow-x-auto hide-scrollbar pb-2 mb-3"></div>
-      
-      <!-- Добавление нового времени -->
-      <div class="flex gap-2 mb-3">
-        <input id="newTimeInput" type="time" class="bg-neutral-800 border border-neutral-700 text-white rounded-xl px-3 py-2 text-xs flex-1 focus:outline-none focus:border-rose-400" />
-        <button onclick="addCustomTimeSlot()" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-medium active:scale-95 transition">
-          + Добавить время
-        </button>
-      </div>
-
-      <div id="adminTimesGrid" class="grid grid-cols-3 gap-2"></div>
-    </section>
-
-    <!-- Управление услугами -->
-    <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
-      <div class="flex justify-between items-center mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Услуги и прайс</span>
-        <button onclick="openAddServiceModal()" class="text-xs bg-neutral-800 hover:bg-neutral-700 text-rose-400 border border-neutral-700 px-2.5 py-1 rounded-lg">
-          + Добавить
-        </button>
-      </div>
-      <div id="adminServicesList" class="space-y-2.5"></div>
-    </section>
-  </main>
-
-  <!-- Модалка добавления услуги -->
-  <div id="addServiceModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 w-full max-w-xs shadow-2xl space-y-3">
-      <h3 class="text-sm font-semibold text-white">Новая услуга</h3>
-      <div>
-        <label class="block text-[10px] text-neutral-400 mb-1">Название услуги</label>
-        <input id="newServTitle" type="text" placeholder="Напр. Мокрый эффект" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400" />
-      </div>
-      <div>
-        <label class="block text-[10px] text-neutral-400 mb-1">Длительность</label>
-        <input id="newServTime" type="text" placeholder="Напр. 2 ч" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400" />
-      </div>
-      <div>
-        <label class="block text-[10px] text-neutral-400 mb-1">Цена (₽)</label>
-        <input id="newServPrice" type="number" placeholder="2500" class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400" />
-      </div>
-      <div class="flex gap-2 pt-2">
-        <button onclick="closeAddServiceModal()" class="flex-1 py-2 text-xs rounded-xl bg-neutral-800 text-neutral-300">Отмена</button>
-        <button onclick="saveNewService()" class="flex-1 py-2 text-xs rounded-xl bg-rose-500 text-white font-medium">Создать</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const tg = window.Telegram?.WebApp;
-    if (tg) { tg.ready(); tg.expand(); }
-
-    const MASTER_TELEGRAM_ID = 374188835;
-    const BOT_TOKEN = "8869519052:AAFZlx_s0omsS5YtkFaf14M3r_llXC90j5U";
-
-    const baseServices =
+      <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-2.5 px-0.
