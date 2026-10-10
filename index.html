@@ -20,9 +20,10 @@
 </head>
 <body class="p-4 pb-28 max-w-md mx-auto">
 
+  <!-- Шапка -->
   <header class="flex items-center justify-between mb-5">
     <div class="flex items-center gap-3">
-      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-amber-500/20 border border-rose-500/30 flex items-center justify-center text-xl">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-500/20 to-amber-500/20 border border-rose-500/30 flex items-center justify-center text-xl shadow-inner">
         ✨
       </div>
       <div>
@@ -51,7 +52,10 @@
     </section>
 
     <section>
-      <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400 block mb-2.5 px-0.5">3. Свободные окна</span>
+      <div class="flex justify-between items-center mb-2.5 px-0.5">
+        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">3. Свободные окна</span>
+        <span id="syncStatus" class="text-[10px] text-neutral-500 font-mono"></span>
+      </div>
       <div id="timesContainer" class="grid grid-cols-4 gap-2"></div>
       <p id="noTimesLabel" class="text-xs text-neutral-500 text-center hidden py-3">Нет свободных окон на этот день</p>
     </section>
@@ -84,13 +88,14 @@
       <span class="font-mono bg-rose-900/40 px-2 py-0.5 rounded-md text-[10px]">ADMIN</span>
     </div>
 
+    <!-- Управление окнами -->
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
       <div class="flex justify-between items-center mb-3">
         <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Окна на дату</span>
         <span id="adminSelectedDateLabel" class="text-xs font-mono text-rose-400 font-semibold"></span>
       </div>
       <div id="adminDatesContainer" class="flex gap-2 overflow-x-auto hide-scrollbar pb-2 mb-3"></div>
-      
+
       <div class="flex gap-2 mb-3">
         <input id="newTimeInput" type="time" class="bg-neutral-800 border border-neutral-700 text-white rounded-xl px-3 py-2 text-xs flex-1 focus:outline-none focus:border-rose-400" />
         <button onclick="addCustomTimeSlot()" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-medium active:scale-95 transition">
@@ -101,6 +106,7 @@
       <div id="adminTimesGrid" class="grid grid-cols-3 gap-2"></div>
     </section>
 
+    <!-- Управление услугами -->
     <section class="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-4">
       <div class="flex justify-between items-center mb-3">
         <span class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Услуги и прайс</span>
@@ -144,10 +150,13 @@
       } catch (e) {}
     }
 
+    // КОНФИГУРАЦИЯ СЕРВЕРОВ И КЛЮЧЕЙ
     const MASTER_TELEGRAM_ID = 374188835;
     const BOT_TOKEN = "8869519052:AAFZlx_s0omsS5YtkFaf14M3r_llXC90j5U";
+    const JSONBIN_BIN_ID = "6aca035eac6210605a24e6b1";
+    const JSONBIN_API_KEY = "$2a$10$rhjdFHQpU92finDmtVg4seWWl5mvFyJpdrg4LjSZEPOHLdrdyRF7u";
 
-    const baseServices = [
+    const defaultServices = [
       { id: '1', title: 'Классика (1D)', time: '1.5 ч', price: 2200 },
       { id: '2', title: '2D объем', time: '2 ч', price: 2600 },
       { id: '3', title: '3D объем / Мокрый эффект', time: '2.5 ч', price: 3000 },
@@ -156,7 +165,7 @@
 
     const defaultDaySlots = ["10:00", "12:30", "15:00", "17:30", "20:00"];
 
-    let services = baseServices;
+    let services = defaultServices;
     let customSchedule = {};
     let blockedSlots = {};
 
@@ -167,10 +176,11 @@
     let isAdmin = false;
     let selectedDate = getFormattedDate(new Date());
     let selectedTime = null;
+    let selectedService = services[0];
 
-    // Синхронная загрузка локальных данных без риска блокировки UI
+    // Локальное кэширование
     try {
-      const local = localStorage.getItem('lash_full_data');
+      const local = localStorage.getItem('lash_cache');
       if (local) {
         const parsed = JSON.parse(local);
         if (Array.isArray(parsed.services) && parsed.services.length > 0) services = parsed.services;
@@ -179,14 +189,46 @@
       }
     } catch (e) {}
 
-    let selectedService = services[0];
-
-    function saveAllData() {
-      const payload = JSON.stringify({ services, customSchedule, blockedSlots });
-      try { localStorage.setItem('lash_full_data', payload); } catch (e) {}
+    // ОБЛАЧНАЯ СИНХРОНИЗАЦИЯ ЧЕРЕЗ JSONBIN
+    async function syncFromCloud() {
       try {
-        if (tg?.CloudStorage) tg.CloudStorage.setItem('lash_full_data', payload, () => {});
-      } catch (e) {}
+        const statusEl = document.getElementById('syncStatus');
+        if (statusEl) statusEl.textContent = '⟳ онлайн';
+
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+          headers: { "X-Master-Key": JSONBIN_API_KEY }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const rec = data.record || {};
+          if (Array.isArray(rec.services) && rec.services.length > 0) services = rec.services;
+          if (rec.customSchedule) customSchedule = rec.customSchedule;
+          if (rec.blockedSlots) blockedSlots = rec.blockedSlots;
+
+          localStorage.setItem('lash_cache', JSON.stringify({ services, customSchedule, blockedSlots }));
+          if (isAdmin) renderAdmin(); else renderClient();
+          if (statusEl) statusEl.textContent = '● онлайн';
+        }
+      } catch (err) {
+        console.warn("Cloud sync error:", err);
+      }
+    }
+
+    async function pushToCloud() {
+      const payload = { services, customSchedule, blockedSlots };
+      localStorage.setItem('lash_cache', JSON.stringify(payload));
+      try {
+        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Master-Key": JSONBIN_API_KEY
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.warn("Cloud push error:", err);
+      }
     }
 
     function getSlotsForDate(date) {
@@ -373,7 +415,7 @@
       const idx = blockedSlots[selectedDate].indexOf(t);
       if (idx > -1) blockedSlots[selectedDate].splice(idx, 1);
       else blockedSlots[selectedDate].push(t);
-      saveAllData();
+      pushToCloud();
       renderAdmin();
     }
 
@@ -386,7 +428,7 @@
       if (!customSchedule[selectedDate].includes(val)) {
         customSchedule[selectedDate].push(val);
         customSchedule[selectedDate].sort();
-        saveAllData();
+        pushToCloud();
         renderAdmin();
       }
       document.getElementById('newTimeInput').value = '';
@@ -400,7 +442,7 @@
       if (blockedSlots[selectedDate]) {
         blockedSlots[selectedDate] = blockedSlots[selectedDate].filter(item => item !== t);
       }
-      saveAllData();
+      pushToCloud();
       renderAdmin();
     }
 
@@ -431,7 +473,7 @@
         price: price
       });
 
-      saveAllData();
+      pushToCloud();
       closeAddServiceModal();
       document.getElementById('newServTitle').value = '';
       document.getElementById('newServTime').value = '';
@@ -445,16 +487,15 @@
         return;
       }
       services = services.filter(s => s.id !== id);
-      saveAllData();
+      pushToCloud();
       renderAdmin();
     }
 
-    // Отправка сообщений: и клиенту, и мастеру
     function sendTelegramNotifications(order) {
       const clientUserId = tg?.initDataUnsafe?.user?.id;
       const username = tg?.initDataUnsafe?.user?.username ? `@${tg.initDataUnsafe.user.username}` : 'не указан';
 
-      // 1. Уведомление мастеру
+      // Мастеру
       const masterMsg = encodeURIComponent(
         `🔔 <b>НОВАЯ ЗАПИСЬ НА РЕСНИЦЫ!</b>\n\n` +
         `👤 <b>Клиент:</b> ${order.name}\n` +
@@ -467,7 +508,7 @@
       );
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${MASTER_TELEGRAM_ID}&text=${masterMsg}&parse_mode=HTML`);
 
-      // 2. Чек-подтверждение клиенту в личный чат (если это не сам мастер)
+      // Клиенту
       if (clientUserId && clientUserId !== MASTER_TELEGRAM_ID) {
         const clientMsg = encodeURIComponent(
           `✨ <b>Вы успешно записаны!</b>\n\n` +
@@ -494,7 +535,7 @@
       if (!blockedSlots[selectedDate].includes(selectedTime)) {
         blockedSlots[selectedDate].push(selectedTime);
       }
-      saveAllData();
+      pushToCloud();
 
       const bookingInfo = {
         name: name,
@@ -518,6 +559,7 @@
 
     checkAdmin();
     renderClient();
+    syncFromCloud();
   </script>
 </body>
 </html>
